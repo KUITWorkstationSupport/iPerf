@@ -27,6 +27,7 @@ $ExportStatsReportPath = $ExportRoot + '\iPerfReport_' + $DateTime + '.xlsx'
 ##### Helper functions
 #####
 
+# Gather all AP data from AirWave for later reference
 function Get-AirWaveAPs
 {
     param($ScriptPath,$BuildingDetails)
@@ -59,6 +60,7 @@ function Get-AirWaveAPs
     Return $APs
 }
 
+# Gather all Building data for later reference
 function Get-BuildingInfo
 {
     param($Path)
@@ -77,6 +79,7 @@ function Get-BuildingInfo
     Return $Buildings
 }
 
+# Determine the connection type of a given iPerf entry
 function Get-iPerfEntryConnectionType
 {
     param ($Entry)
@@ -91,6 +94,7 @@ function Get-iPerfEntryConnectionType
     return $iPerfEntryConnectionType
 }
 
+# Determine the network vendor based on IP range
 function Get-iPerfConnectionVendor
 {
     param ($Entry)
@@ -98,6 +102,7 @@ function Get-iPerfConnectionVendor
     return $iPerfConnectionVendor
 }
 
+# Determine the status of an iPerf entry based on external definition of what "good" is (current 50% of link speed)
 function Get-iPerfEntryStatus
 {
     param ($Entry)
@@ -129,6 +134,7 @@ function Get-iPerfEntryStatus
     return $iPerfEntryStatus
 }
 
+# Export stats
 function Export-iPerfStats
 {
     param($Stats,$Path,$ExportPath,$WorksheetName)
@@ -169,6 +175,7 @@ function Export-iPerfStats
 ##### Primary Functions
 #####
 
+# Gather iPerf data
 function Get-iPerfEntries
 {
     param($Path)
@@ -313,6 +320,7 @@ foreach ($year in $EntriesInScope.entry.year | select -Unique)
 }
 $Timeline = $TimeLine | Sort -Property 'Year'
 
+# Loop through each building and generate stats excel spreadsheet
 foreach ($building in ($EntriesInScope | group 'building name'))
 {
     $ExportPath = $ExportRoot + '\' + $building.name + '_iPerfReport_' + $DateTime + '.xlsx'
