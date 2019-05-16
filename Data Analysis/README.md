@@ -3,7 +3,9 @@ Intended to be run against already generated iPerf data to create reports and st
 
 # Required Variables
 $Path : Set this to the UNC location for the already generated iPerf data.
+
 $AirWaveScript : Set this to the UNC location for the AirWave.py script that is used to gather AP details.
+
 $BuildingInfoPath : Set this to the UNC path for the Excel spreadsheet containg details on building information.
 
 # Reports Generated
