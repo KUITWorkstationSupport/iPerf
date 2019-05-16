@@ -7,13 +7,13 @@
 #####
 
 # UNC path to the root folder where the iPerf reports are stored
-$Path = "\\cfs.home.ku.edu\it_general\Units\SS\ITT2\iPerf"
+$Path = "\\server.domain.com\share\iPerf"
 
 # UNC path to the airwave python script
-$AirwaveScript = "C:\Git\scripts\Python\AirWave.py"
+$AirwaveScript = "C:\AirWave.py"
 
 # UNC path to the building details excel spreadsheet
-$BuildingInfoPath = "C:\Users\ajacks88\OneDrive - The University of Kansas\Git\Building List.xlsx"
+$BuildingInfoPath = "C:\Building List.xlsx"
 
 #####
 ##### Do not edit this section
