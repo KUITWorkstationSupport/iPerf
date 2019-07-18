@@ -36,7 +36,7 @@ function Get-AirWaveAPs
     foreach ($Device in $Gather)
     {
         if ($Device.split(',')[0].split('-')[1][0] -eq 'w'){$DeviceFunction = "Wireless AP"}
-        $BuildingName = ($BuildingDetails.where({$_.ABBR -eq $Device.split('-')[0]})).Name
+        $BuildingName = ($BuildingDetails | Where-Object ({$_.ABBR -eq $Device.split('-')[0]})).Name
         switch ($Device.split(',')[0].split('-')[1][1])
         {
             A {$DeviceType = 'Wireless Access Point'}
@@ -85,7 +85,7 @@ function Get-iPerfEntryConnectionType
     param ($Entry)
     if ($Entry.BSSID -eq ''){$iPerfEntryConnectionType = 'Ethernet'}
     elseif ($Entry.'Adapter Name' -match 'Apple'){$connectionType = 'Ethernet'}
-    elseif (($Entry.'Client Reverse Receive Rate (Mb/s)' -gt $Entry.'Link Speed (Mb/s)') -or ($Entry.'Client Send Rate (Mb/s)' -gt $Entry.'Link Speed (Mb/s)')){$iPerfEntryConnectionType = 'Ethernet'}
+    elseif (($Entry.'Client TCP Reverse Receive Rate (Mb/s)' -gt $Entry.'Link Speed (Mb/s)') -or ($Entry.'Client TCP Send Rate (Mb/s)' -gt $Entry.'Link Speed (Mb/s)')){$iPerfEntryConnectionType = 'Ethernet'}
     elseif ($Entry.'Adapter Name' -match 'cisco'){$iPerfEntryConnectionType = 'VPN'}
     elseif ($Entry.'Adapter Name' -match 'Virtual'){$iPerfEntryConnectionType = 'Virtual'}
     elseif ($Entry.'Adapter Name' -match 'Hyper-V'){$iPerfEntryConnectionType = 'Virtual'}
@@ -107,9 +107,9 @@ function Get-iPerfEntryStatus
 {
     param ($Entry)
     $GoodLinkPercent = '50'
-    $DownloadPercentOfLink = [math]::Round((($Entry.'Client Reverse Receive Rate (Mb/s)' / $Entry.'Link Speed (Mb/s)')*100),2)
+    $DownloadPercentOfLink = [math]::Round((($Entry.'Client TCP Reverse Receive Rate (Mb/s)' / $Entry.'Link Speed (Mb/s)')*100),2)
     if ($DownloadPercentOfLink -ge $GoodLinkPercent){$DownState = 'Good'} else {$DownState = 'Bad'}
-    $UploadPercentOfLink = [math]::Round((($Entry.'Client Send Rate (Mb/s)' / $Entry.'Link Speed (Mb/s)')*100),2)
+    $UploadPercentOfLink = [math]::Round((($Entry.'Client TCP Send Rate (Mb/s)' / $Entry.'Link Speed (Mb/s)')*100),2)
     if ($UploadPercentOfLink -ge $GoodLinkPercent){$UpState = 'Good'} else {$UpState = 'Bad'}
     $iPerfEntryStatus = New-Object pscustomobject
     $iPerfEntryStatus | Add-Member -MemberType NoteProperty -Name 'DownloadStatus' -Value $DownState
@@ -149,8 +149,8 @@ function Export-iPerfStats
     $OverallStats | Add-Member -MemberType NoteProperty -Name 'Unique Computer Count' -Value ($Stats.'Computer Name' | Select -Unique).count
     $OverallStats | Add-Member -MemberType NoteProperty -Name '% Unique Computers With AC Card' -Value ((($Stats.where({$_.entry.'adapter name' -match 'ac' -and $_.entry.'adapter name' -notmatch 'surface'}).'computer name' | select -Unique).count / ($stats.'computer name' | select -Unique).count)*100)
     $OverallStats | Add-Member -MemberType NoteProperty -Name '% Unique Computers in Ideal State' -Value ((($Stats.where({$_.entry.'ideal' -eq 'true'}).'computer name' | select -Unique).count / ($Stats.'computer name' | select -Unique).count)*100)
-    $OverallStats | Add-Member -MemberType NoteProperty -Name 'Mean Upload (Mb/s)' -Value ($Stats.entry.'Client Send Rate (Mb/s)' | Measure-Object -Average).Average
-    $OverallStats | Add-Member -MemberType NoteProperty -Name 'Mean Download (Mb/s)' -Value ($Stats.entry.'Client Reverse Receive Rate (Mb/s)' | Measure-Object -Average).Average
+    $OverallStats | Add-Member -MemberType NoteProperty -Name 'Mean Upload (Mb/s)' -Value ($Stats.entry.'Client TCP Send Rate (Mb/s)' | Measure-Object -Average).Average
+    $OverallStats | Add-Member -MemberType NoteProperty -Name 'Mean Download (Mb/s)' -Value ($Stats.entry.'Client TCP Reverse Receive Rate (Mb/s)' | Measure-Object -Average).Average
     $OverallStats | Add-Member -MemberType NoteProperty -Name 'Percent Of Time Upload Entries Are Good' -Value (($Stats.Entry.where({$_.'Upload Status' -eq 'Good'}).count / $Stats.Entry.count)*100)
     $OverallStats | Add-Member -MemberType NoteProperty -Name 'Percent Of Time Download Entries Are Good' -Value (($Stats.Entry.where({$_.'Download Status' -eq 'Good'}).count / $Stats.Entry.count)*100)
     Export-Excel -Path $ExportPath -TargetData $OverallStats -WorksheetName $WorksheetName -AutoSize -AutoFilter
@@ -163,8 +163,8 @@ function Export-iPerfStats
         $Stats | Add-Member -MemberType NoteProperty -Name 'Unique Computer Count' -Value ($AP.Group.'Computer Name' | Select -Unique).count
         $Stats | Add-Member -MemberType NoteProperty -Name '% Unique Computers With AC Card' -Value ((($AP.group.where({$_.entry.'adapter name' -match 'ac' -and $_.entry.'adapter name' -notmatch 'surface'}).'computer name' | select -Unique).count / ($ap.group.'computer name' | select -Unique).count)*100)
         $Stats | Add-Member -MemberType NoteProperty -Name '% Unique Computers in Ideal State' -Value ((($AP.group.where({$_.entry.'ideal' -eq 'true'}).'computer name' | select -Unique).count / ($AP.group.'computer name' | select -Unique).count)*100)
-        $Stats | Add-Member -MemberType NoteProperty -Name 'Mean Upload (Mb/s)' -Value ($AP.Group.Entry.'Client Send Rate (Mb/s)' | Measure-Object -Average).Average
-        $Stats | Add-Member -MemberType NoteProperty -Name 'Mean Download (Mb/s)' -Value ($AP.Group.Entry.'Client Reverse Receive Rate (Mb/s)' | Measure-Object -Average).Average
+        $Stats | Add-Member -MemberType NoteProperty -Name 'Mean Upload (Mb/s)' -Value ($AP.Group.Entry.'Client TCP Send Rate (Mb/s)' | Measure-Object -Average).Average
+        $Stats | Add-Member -MemberType NoteProperty -Name 'Mean Download (Mb/s)' -Value ($AP.Group.Entry.'Client TCP Reverse Receive Rate (Mb/s)' | Measure-Object -Average).Average
         $Stats | Add-Member -MemberType NoteProperty -Name 'Percent Of Time Upload Entries Are Good' -Value (($AP.group.where({$_.'Upload Status' -eq 'Good'}).count / $AP.group.count)*100)
         $Stats | Add-Member -MemberType NoteProperty -Name 'Percent Of Time Download Entries Are Good' -Value (($AP.group.where({$_.'Download Status' -eq 'Good'}).count / $AP.group.count)*100)
         Export-Excel -Path $ExportPath -TargetData $Stats -WorksheetName $WorksheetName -AutoSize -AutoFilter -Append
@@ -216,8 +216,8 @@ function Get-iPerfEntries
                     "Timestamp" = $Timestamp;
                     "Year" = $Timestamp.Year;
                     "Month" = $Timestamp.Month;
-                    "Client Send Rate (Mb/s)" = ([math]::Round(($line.'Client Send Rate (Mb/s)'),2));
-                    "Client Reverse Receive Rate (Mb/s)" = ([math]::round(($line.'Client Reverse Receive Rate (Mb/s)'),2));
+                    "Client TCP Send Rate (Mb/s)" = ([math]::Round(($line.'Client TCP Send Rate (Mb/s)'),2));
+                    "Client TCP Reverse Receive Rate (Mb/s)" = ([math]::round(($line.'Client TCP Reverse Receive Rate (Mb/s)'),2));
                     "Link Speed (Mb/s)" = $line.'Link Speed (Mb/s)';
                     "SSID" = $line.SSID;
                     "Radio Type" = $line.'Radio Type';
