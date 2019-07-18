@@ -84,7 +84,7 @@ function Get-iPerfEntryConnectionType
 {
     param ($Entry)
     if ($Entry.BSSID -eq ''){$iPerfEntryConnectionType = 'Ethernet'}
-    elseif ($Entry.'Adapter Name' -match 'Apple'){$connectionType = 'Ethernet'}
+    elseif ($Entry.'Adapter Name' -match 'Apple'){$iPerfEntryConnectionType = 'Ethernet'}
     elseif (($Entry.'Client TCP Reverse Receive Rate (Mb/s)' -gt $Entry.'Link Speed (Mb/s)') -or ($Entry.'Client TCP Send Rate (Mb/s)' -gt $Entry.'Link Speed (Mb/s)')){$iPerfEntryConnectionType = 'Ethernet'}
     elseif ($Entry.'Adapter Name' -match 'cisco'){$iPerfEntryConnectionType = 'VPN'}
     elseif ($Entry.'Adapter Name' -match 'Virtual'){$iPerfEntryConnectionType = 'Virtual'}
