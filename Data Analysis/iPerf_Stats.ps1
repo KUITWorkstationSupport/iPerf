@@ -64,7 +64,7 @@ function Get-AirWaveAPs
 function Get-BuildingInfo
 {
     param($Path)
-    $Import = Import-Excel -Path $Path | select -Property Name,ABBR
+    $Import = Import-Excel -Path $Path | Select-Object -Property Name,ABBR
     $Buildings = @()
     foreach ($Entry in $Import)
     {
@@ -146,23 +146,23 @@ function Export-iPerfStats
     $OverallStats = New-Object PSCustomObject
     $OverallStats | Add-Member -MemberType NoteProperty -Name 'Scope' -Value 'Overall'
     $OverallStats | Add-Member -MemberType NoteProperty -Name 'Entry Count' -Value $Stats.count
-    $OverallStats | Add-Member -MemberType NoteProperty -Name 'Unique Computer Count' -Value ($Stats.'Computer Name' | Select -Unique).count
-    $OverallStats | Add-Member -MemberType NoteProperty -Name '% Unique Computers With AC Card' -Value ((($Stats.where({$_.entry.'adapter name' -match 'ac' -and $_.entry.'adapter name' -notmatch 'surface'}).'computer name' | select -Unique).count / ($stats.'computer name' | select -Unique).count)*100)
-    $OverallStats | Add-Member -MemberType NoteProperty -Name '% Unique Computers in Ideal State' -Value ((($Stats.where({$_.entry.'ideal' -eq 'true'}).'computer name' | select -Unique).count / ($Stats.'computer name' | select -Unique).count)*100)
+    $OverallStats | Add-Member -MemberType NoteProperty -Name 'Unique Computer Count' -Value ($Stats.'Computer Name' | Select-Object -Unique).count
+    $OverallStats | Add-Member -MemberType NoteProperty -Name '% Unique Computers With AC Card' -Value ((($Stats.where({$_.entry.'adapter name' -match 'ac' -and $_.entry.'adapter name' -notmatch 'surface'}).'computer name' | Select-Object -Unique).count / ($stats.'computer name' | Select-Object -Unique).count)*100)
+    $OverallStats | Add-Member -MemberType NoteProperty -Name '% Unique Computers in Ideal State' -Value ((($Stats.where({$_.entry.'ideal' -eq 'true'}).'computer name' | Select-Object -Unique).count / ($Stats.'computer name' | Select-Object -Unique).count)*100)
     $OverallStats | Add-Member -MemberType NoteProperty -Name 'Mean Upload (Mb/s)' -Value ($Stats.entry.'Client TCP Send Rate (Mb/s)' | Measure-Object -Average).Average
     $OverallStats | Add-Member -MemberType NoteProperty -Name 'Mean Download (Mb/s)' -Value ($Stats.entry.'Client TCP Reverse Receive Rate (Mb/s)' | Measure-Object -Average).Average
     $OverallStats | Add-Member -MemberType NoteProperty -Name 'Percent Of Time Upload Entries Are Good' -Value (($Stats.Entry.where({$_.'Upload Status' -eq 'Good'}).count / $Stats.Entry.count)*100)
     $OverallStats | Add-Member -MemberType NoteProperty -Name 'Percent Of Time Download Entries Are Good' -Value (($Stats.Entry.where({$_.'Download Status' -eq 'Good'}).count / $Stats.Entry.count)*100)
     Export-Excel -Path $ExportPath -TargetData $OverallStats -WorksheetName $WorksheetName -AutoSize -AutoFilter
 
-    foreach ($AP in $Stats | Group 'AP Name')
+    foreach ($AP in $Stats | Group-Object 'AP Name')
     {
         $Stats = New-Object PSCustomObject
         $Stats | Add-Member -MemberType NoteProperty -Name 'Scope' -Value $AP.Name
         $Stats | Add-Member -MemberType NoteProperty -Name 'Entry Count' -Value $AP.Group.Count
-        $Stats | Add-Member -MemberType NoteProperty -Name 'Unique Computer Count' -Value ($AP.Group.'Computer Name' | Select -Unique).count
-        $Stats | Add-Member -MemberType NoteProperty -Name '% Unique Computers With AC Card' -Value ((($AP.group.where({$_.entry.'adapter name' -match 'ac' -and $_.entry.'adapter name' -notmatch 'surface'}).'computer name' | select -Unique).count / ($ap.group.'computer name' | select -Unique).count)*100)
-        $Stats | Add-Member -MemberType NoteProperty -Name '% Unique Computers in Ideal State' -Value ((($AP.group.where({$_.entry.'ideal' -eq 'true'}).'computer name' | select -Unique).count / ($AP.group.'computer name' | select -Unique).count)*100)
+        $Stats | Add-Member -MemberType NoteProperty -Name 'Unique Computer Count' -Value ($AP.Group.'Computer Name' | Select-Object -Unique).count
+        $Stats | Add-Member -MemberType NoteProperty -Name '% Unique Computers With AC Card' -Value ((($AP.group.where({$_.entry.'adapter name' -match 'ac' -and $_.entry.'adapter name' -notmatch 'surface'}).'computer name' | Select-Object -Unique).count / ($ap.group.'computer name' | Select-Object -Unique).count)*100)
+        $Stats | Add-Member -MemberType NoteProperty -Name '% Unique Computers in Ideal State' -Value ((($AP.group.where({$_.entry.'ideal' -eq 'true'}).'computer name' | Select-Object -Unique).count / ($AP.group.'computer name' | Select-Object -Unique).count)*100)
         $Stats | Add-Member -MemberType NoteProperty -Name 'Mean Upload (Mb/s)' -Value ($AP.Group.Entry.'Client TCP Send Rate (Mb/s)' | Measure-Object -Average).Average
         $Stats | Add-Member -MemberType NoteProperty -Name 'Mean Download (Mb/s)' -Value ($AP.Group.Entry.'Client TCP Reverse Receive Rate (Mb/s)' | Measure-Object -Average).Average
         $Stats | Add-Member -MemberType NoteProperty -Name 'Percent Of Time Upload Entries Are Good' -Value (($AP.group.where({$_.'Upload Status' -eq 'Good'}).count / $AP.group.count)*100)
@@ -297,7 +297,7 @@ $APDetails = Get-AirWaveAPs -ScriptPath $AirwaveScript -BuildingDetails $Buildin
 $iPerfEntries = Get-iPerfEntries -Path $Path
 
 # Select just the entires that are on wifi, on aruba, and has a building name
-$EntriesInScope = $iPerfEntries | where ({
+$EntriesInScope = $iPerfEntries | Where-Object ({
     $_.entry.'connection type' -eq 'wifi' -and 
     $_.entry.'connection vendor' -eq 'aruba' -and
     $_.'building name' -ne $null
@@ -305,23 +305,23 @@ $EntriesInScope = $iPerfEntries | where ({
 
 # Determine all years/months included in the reports
 $TimeLine = @()
-foreach ($year in $EntriesInScope.entry.year | select -Unique)
+foreach ($year in $EntriesInScope.entry.year | Select-Object -Unique)
 {
     $YearEntry = @()
-    foreach ($month in $EntriesInScope.entry.where({$_.year -eq $year}).month | select -Unique)
+    foreach ($month in $EntriesInScope.entry.where({$_.year -eq $year}).month | Select-Object -Unique)
     {
         $TimeEntry = New-Object PSCustomObject
         $TimeEntry | Add-Member -MemberType NoteProperty -Name 'Year' -Value $year
         $TimeEntry | Add-Member -MemberType NoteProperty -Name 'Month' -Value $month
         $YearEntry += $TimeEntry
     }
-    $YearEntry = $YearEntry | Sort -Property 'Month'
+    $YearEntry = $YearEntry | Sort-Object -Property 'Month'
     $Timeline += $YearEntry
 }
-$Timeline = $TimeLine | Sort -Property 'Year'
+$Timeline = $TimeLine | Sort-Object -Property 'Year'
 
 # Loop through each building and generate stats excel spreadsheet
-foreach ($building in ($EntriesInScope | group 'building name'))
+foreach ($building in ($EntriesInScope | Group-Object 'building name'))
 {
     $ExportPath = $ExportRoot + '\' + $building.name + '_iPerfReport_' + $DateTime + '.xlsx'
     Export-iPerfStats -Stats $building.group -Path $path -ExportPath $ExportPath -WorksheetName 'All'
