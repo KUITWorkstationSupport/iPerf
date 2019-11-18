@@ -2,7 +2,7 @@
 This runs iPerf (a network testing application), against an optionally specified iPerf server (defaults to iperf.ku.edu), for an optionally specified amount of time per test (defaults to 5 seconds), and finally exports results to CFS.
 
 # Usage
-iPerf-Test.ps1 `[[-iPerfServer] <String>] [[-iPerfTime] <Int32>] [[-ExportDir] <String>] [<CommonParameters>]`
+iPerf-Test.ps1 `[[-iPerfServer] <String>] [[-iPerfTime] <Int32>] [[-iPerfMinPort] <Int32>] [[-iPerfMaxPort] <Int32>] [[-ExportDir] <String>] [<CommonParameters>]`
 
 # Data Points Collected
 1. Time Stamp
