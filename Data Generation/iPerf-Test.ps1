@@ -8,6 +8,10 @@
 	ie: "iperf.ku.edu"
 .PARAMETER iPerfTime
 	Specify duration in seconds of how long each iPerf test should run. 
+.PARAMETER iPerfMinPort
+	Specify lower end of the port range iPerf should be randomly pointed at.
+.PARAMETER iPerfMaxPort
+	Specify upper end of the port range iPerf should be randomly pointed at. 
 .PARAMETER ExportDir
 	Specify UNC path to where the results should be exported.
 	ie: "\\cfs.home.ku.edu\IT_General\Units\SS\ITT2\iPerf"
@@ -26,6 +30,7 @@
 	Updated: 2019-01-30 -- Added last boot timestamp, last sleep timestamp, last wake source fields
 	Updated: 2019-05-09 -- Added forward and reverse UDP tests, added forward jitter, forward packet loss, reverse packet loss. 
 	Updated: 2019-05-14 -- Added comment based help and mandatory parameters for iPerf server and Export Path.
+	Updated: 2019-11-18 -- Added port range parameters.
 .LINK
 	Download iPerf: https://iperf.fr/iperf-download.php
 	iPerf Documentation: https://iperf.fr/iperf-doc.php
@@ -36,11 +41,16 @@ PARAM
 (
 	[string]$iPerfServer = "iperf.ku.edu",
 	[int]$iPerfTime = "5",
-	[string]$ExportDir = "\\cfs.home.ku.edu\it_general\Units\SS\ITT2\iPerf"
+	[int]$iPerfMinPort = 5201,
+	[int]$iPerfMaxPort = 5300,
+	[string]$ExportDir = "\\cfs.home.ku.edu\it_general\Units\SS\ITT2\iPerf\"
 )
 Write-Verbose -Message "iPerf Server: $iPerfServer"
-Write-Verbose -Message "Export Path: $ExportDir"
 Write-Verbose -Message "Test Duration: $iPerfTime seconds"
+Write-Verbose -Message "Min port: $iPerfMinPort"
+Write-Verbose -Message "Max port: $iPerfMaxPort"
+Write-Verbose -Message "Export Path: $ExportDir"
+
 
 #region configuration
 $ExportFileName = $env:COMPUTERNAME + "_iPerf.csv"
@@ -56,6 +66,7 @@ if (Test-Path $iPerfEXEPath -PathType Leaf)
 {
 
 	$CPUCores = Get-WmiObject -Class Win32_processor | Select-Object -ExpandProperty NumberOfCores
+    $port = Get-Random -minimum 5201 -maximum 5300 #Randomize the port for testing in this range: 5201-5300
 	$CPUCoresTotal = ($CPUCores | Measure-Object -Sum).Sum
 	$iPerfThreads = [math]::Ceiling($CPUCoresTotal/2)		#We arbitrarily picked half the physical cores as the marginal speed increases in parallel mode diminish quickly and we want to as low-impact as possible.
 		Write-Debug "CPU Cores Detected: $CPUCores"
@@ -70,8 +81,8 @@ if (Test-Path $iPerfEXEPath -PathType Leaf)
 	#region forwardTCPTest
 	#While we don't gather TCP retransmit data, it was thought about. We found that iPerf does only generates that data in reverse mode and so wasn't super helpful.
 	Write-Verbose "Running iPerf in fowards TCP mode"
-	$iPerfSendTCPResults = Invoke-Expression -Command "$iPerfEXEPath --client $iPerfServer --time $iPerfTime --parallel $iPerfThreads --get-server-output --json" | Out-String | ConvertFrom-Json
-		Write-Debug "iPerf Command: $iPerfEXEPath --client $iPerfServer --time $iPerfTime --parallel $iPerfThreads --get-server-output --json"
+	$iPerfSendTCPResults = Invoke-Expression -Command "$iPerfEXEPath --client $iPerfServer --port $port --time $iPerfTime --parallel $iPerfThreads --get-server-output --json" | Out-String | ConvertFrom-Json
+		Write-Debug "iPerf Command: $iPerfEXEPath --client $iPerfServer --port $port --time $iPerfTime --parallel $iPerfThreads --get-server-output --json"
 	if ($iPerfSendTCPResults.error)
 		{
 			Write-Error "iPerf Test failed: TCP Send"
@@ -88,8 +99,8 @@ if (Test-Path $iPerfEXEPath -PathType Leaf)
 
 	#region reverseTCPTest
 	Write-Verbose "Running iPerf in reverse TCP mode"
-	$iPerfReverseTCPResults = Invoke-Expression -Command "$iPerfEXEPath --client $iPerfServer --time $iPerfTime --parallel $iPerfThreads --reverse --get-server-output --json" | Out-String | ConvertFrom-Json
-		Write-Debug "iPerf Command: $iPerfEXEPath --client $iPerfServer --time $iPerfTime --parallel $iPerfThreads --reverse --get-server-output --json"
+	$iPerfReverseTCPResults = Invoke-Expression -Command "$iPerfEXEPath --client $iPerfServer --port $port --time $iPerfTime --parallel $iPerfThreads --reverse --get-server-output --json" | Out-String | ConvertFrom-Json
+		Write-Debug "iPerf Command: $iPerfEXEPath --client $iPerfServer --port $port --time $iPerfTime --parallel $iPerfThreads --reverse --get-server-output --json"
 	if ($iPerfReverseTCPResults.error)
 	{
 		Write-Error "iPerf Test failed: TCP Reverse"
@@ -105,8 +116,8 @@ if (Test-Path $iPerfEXEPath -PathType Leaf)
 
 	#region forwardUDPTest
 	Write-Verbose "Running iPerf in forwards UDP mode"
-	$iPerfSendUDPResults = Invoke-Expression -Command "$iPerfEXEPath --client $iPerfServer --time $iPerfTime --parallel $iPerfThreads --udp --get-server-output --json" | Out-String | ConvertFrom-Json
-		Write-Debug "iPerf Command: $iPerfEXEPath --client $iPerfServer --time $iPerfTime --parallel $iPerfThreads --udp --get-server-output --json"
+	$iPerfSendUDPResults = Invoke-Expression -Command "$iPerfEXEPath --client $iPerfServer --port $port --time $iPerfTime --parallel $iPerfThreads --udp --get-server-output --json" | Out-String | ConvertFrom-Json
+		Write-Debug "iPerf Command: $iPerfEXEPath --client $iPerfServer --port $port --time $iPerfTime --parallel $iPerfThreads --udp --get-server-output --json"
 	if ($iPerfSendUDPResults.error)
 	{
 		Write-Error "iPerf Test failed: UDP Send"
@@ -122,8 +133,8 @@ if (Test-Path $iPerfEXEPath -PathType Leaf)
 
 	#region reverseUDPTest
 	Write-Verbose "Running iPerf in reverse UDP mode"
-	$iPerfReverseUDPResults = Invoke-Expression -Command "$iPerfEXEPath --client $iPerfServer --time $iPerfTime --parallel $iPerfThreads --reverse --udp --get-server-output --json" | Out-String | ConvertFrom-Json
-		Write-Debug "iPerf Command: $iPerfEXEPath --client $iPerfServer --time $iPerfTime --parallel $iPerfThreads --reverse --udp --get-server-output --json"
+	$iPerfReverseUDPResults = Invoke-Expression -Command "$iPerfEXEPath --client $iPerfServer --port $port --time $iPerfTime --parallel $iPerfThreads --reverse --udp --get-server-output --json" | Out-String | ConvertFrom-Json
+		Write-Debug "iPerf Command: $iPerfEXEPath --client $iPerfServer --port $port --time $iPerfTime --parallel $iPerfThreads --reverse --udp --get-server-output --json"
 	if ($iPerfReverseUDPResults.error)
 	{
 		Write-Error "iPerf Test failed: UDP Reverse"
